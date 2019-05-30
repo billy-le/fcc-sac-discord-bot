@@ -17,7 +17,7 @@ default:
     break;
 }
 
-module.exports = {
+export default {
     server: {
         port: 3000,
     },
@@ -26,8 +26,14 @@ module.exports = {
         secret: env.DISCORD_CLIENT_SECRET,
         permissionsInt: 67585,
         token: env.DISCORD_TOKEN,
+        channelIds: {
+            generalId: env.DISCORD_GENERAL_CHANNEL_ID,
+        },
     },
     heroku: {
         url: 'https://fcc-sac-discord-bot.herokuapp.com',
+    },
+    mlab: {
+        uri: env.MLAB_URI,
     },
 };
