@@ -4,6 +4,7 @@ import express from 'express';
 import { MongoClient } from 'mongodb';
 import assert from 'assert';
 import bodyParser from 'body-parser';
+import Discord, { RichEmbed } from 'discord.js';
 
 const mongoClient = new MongoClient(config.mlab.uri as string, {
     useNewUrlParser: true,
@@ -28,63 +29,68 @@ mongoClient.connect(function(err, client: any) {
 
     app.listen(config.server.port, () => {
         console.log(`The server is listening on PORT: ${config.server.port}`);
+
+        bot.on('message', (message: any) => {
+            if (!message.content.startsWith('!') || message.author.bot) {
+                return;
+            }
+
+            const args = message.content.slice('!'.length).split(/ +/);
+            const commandName = args.shift().toLowerCase();
+
+            if (!bot.commands.has(commandName)) {
+                return;
+            }
+
+            const command = bot.commands.get(commandName);
+
+            try {
+                command.execute(message, args, db);
+            } catch (error) {
+                message.reply(
+                    'There was an error trying to execute that command!'
+                );
+            }
+        });
     });
 });
 
+// temporary webhook url
 app.post('/', (req, res) => {
+    const channel = bot.channels.get(GENERAL_CHANNEL_ID);
     switch (req.headers['x-github-event']) {
         case 'issue_comment':
-            const channel = bot.channels.get(GENERAL_CHANNEL_ID);
             channel.send('Hello, world!');
             return res.end();
+        case 'pull_request':
+            const { action } = req.body;
+            if (action === 'opened') {
+                const regex = RegExp(/(!cr)\b/gi);
+                const isRequestingCodeReview = regex.test(
+                    req.body.pull_request.title
+                );
+                if (!isRequestingCodeReview) {
+                    return;
+                }
+                const { repository, pull_request } = req.body;
 
+                const msg: RichEmbed = new Discord.RichEmbed()
+                    .setAuthor(repository.full_name)
+                    .setThumbnail(pull_request.user.avatar_url)
+                    .setTitle(
+                        `Hi everyone! I'm requesting a code review on my project. Please take a look! I appreciate your feedback!`
+                    )
+                    .setURL(pull_request.url)
+                    .setColor(0x00471b)
+                    .setDescription(pull_request.body ? pull_request.body : '')
+                    .setFooter(repository.description);
+
+                channel.send(msg);
+            }
+            return res.end();
         default:
             return res.end();
     }
-});
-
-bot.on('message', (message: any) => {
-    if (!message.content.startsWith('!') || message.author.bot) {
-        return;
-    }
-
-    const args = message.content.slice('!'.length).split(/ +/);
-    const commandName = args.shift().toLowerCase();
-
-    if (!bot.commands.has(commandName)) {
-        return;
-    }
-
-    const command = bot.commands.get(commandName);
-
-    try {
-        command.execute(message, args);
-    } catch (error) {
-        console.error(error);
-        message.reply('There was an error trying to execute that command!');
-    }
-
-    const discordUser = {
-        discordUserId: message.author.id,
-        discordUsername: message.author.username,
-    };
-
-    db.collection('users')
-        .findOne({ discordUserId: discordUser.discordUserId })
-        .then((user: any) => {
-            if (!user) {
-                db.collection('users')
-                    .insertOne(discordUser)
-                    .then((user: any) => {
-                        message.author.send(
-                            `Congratulations! You're all set to go, ${
-                                user.ops[0].discordUsername
-                            }`
-                        );
-                    });
-            }
-        })
-        .catch((err: any) => console.log(err));
 });
 
 mongoClient.on('error', err => {
