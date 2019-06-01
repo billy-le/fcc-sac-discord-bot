@@ -26,9 +26,13 @@ export default {
         secret: env.DISCORD_CLIENT_SECRET,
         permissionsInt: 67585,
         token: env.DISCORD_TOKEN,
-        channelIds: {
-            generalId: env.DISCORD_GENERAL_CHANNEL_ID,
+        channels: {
+            general: env.DISCORD_GENERAL_CHANNEL_ID,
         },
+    },
+    meetup: {
+        clientId: env.MEETUP_CLIENT_ID,
+        secret: env.MEETUP_SECRET,
     },
     heroku: {
         url: 'https://fcc-sac-discord-bot.herokuapp.com',
