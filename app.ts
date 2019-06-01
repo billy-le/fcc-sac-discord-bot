@@ -1,10 +1,12 @@
 import config from './config';
-import bot from './bot';
-import express from 'express';
+
 import { MongoClient } from 'mongodb';
 import assert from 'assert';
+import axios from 'axios';
 import bodyParser from 'body-parser';
+import bot from './bot';
 import Discord, { RichEmbed } from 'discord.js';
+import express from 'express';
 
 const mongoClient = new MongoClient(config.mlab.uri as string, {
     useNewUrlParser: true,
@@ -12,12 +14,13 @@ const mongoClient = new MongoClient(config.mlab.uri as string, {
 
 const app = express();
 app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 
 // declare database to export later;
 let db: any;
 
 // discord channel
-const GENERAL_CHANNEL_ID = config.discord.channelIds.generalId;
+const GENERAL_CHANNEL_ID = config.discord.channels.general;
 
 mongoClient.connect(function(err, client: any) {
     assert.equal(null, err);
@@ -28,7 +31,9 @@ mongoClient.connect(function(err, client: any) {
     db = client.db(client.s.options.dbName);
 
     app.listen(config.server.port, () => {
-        console.log(`The server is listening on PORT: ${config.server.port}`);
+        console.log(
+            `The server is listening at http://localhost:${config.server.port}`
+        );
 
         bot.on('message', (message: any) => {
             if (!message.content.startsWith('!') || message.author.bot) {
@@ -53,6 +58,41 @@ mongoClient.connect(function(err, client: any) {
             }
         });
     });
+});
+
+app.get('/oauth/meetup/callback', (req, res) => {
+    const { code } = req.query;
+    const meetupAccessTokenUrl = `https://secure.meetup.com/oauth2/access?client_id=${
+        config.meetup.clientId
+    }&client_secret=${
+        config.meetup.secret
+    }&grant_type=authorization_code&redirect_uri=http://localhost:3000/oauth/meetup/callback&code=${code}`;
+
+    axios
+        .post(
+            meetupAccessTokenUrl,
+            {},
+            {
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+            }
+        )
+        .then(res => {
+            console.log(res);
+            // todo securely store token
+        })
+        .catch(err => console.log(err))
+        .finally(() => {
+            return res.end();
+        });
+});
+
+app.get('/oauth/meetup', (_req, res) => {
+    const meetupAuthorizationPage = `https://secure.meetup.com/oauth2/authorize?client_id=${
+        config.meetup.clientId
+    }&response_type=code&redirect_uri=http://localhost:3000/oauth/meetup/callback`;
+    return res.redirect(meetupAuthorizationPage);
 });
 
 // temporary webhook url
