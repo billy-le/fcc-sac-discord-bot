@@ -1,11 +1,10 @@
-import Discord from 'discord.js';
 import { CommandStore } from './CommandStore';
-
-const { DISCORD_TOKEN } = process.env;
+import config from '../config';
+import Discord from 'discord.js';
 
 const client: any = new Discord.Client();
 client.commands = CommandStore.getInstance().getCommands();
 
-client.login(DISCORD_TOKEN);
+client.login(config.discord.token);
 
 export default client;
