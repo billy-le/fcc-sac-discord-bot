@@ -7,7 +7,7 @@ const GENERAL_CHANNEL_ID = config.discord.channels.general;
 
 const router = express.Router();
 
-router.post('/', (req, res) => {
+router.post('/webhook', (req, res) => {
     const channel = bot.channels.get(GENERAL_CHANNEL_ID);
     switch (req.headers['x-github-event']) {
         case 'issue_comment':

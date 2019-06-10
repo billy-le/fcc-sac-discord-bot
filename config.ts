@@ -43,10 +43,11 @@ const config = {
 
 switch (environment) {
 case 'dev':
+    // Used for GitHub App webhook
     const SmeeClient = require('smee-client');
     const smee = new SmeeClient({
         source: 'https://smee.io/UzY4NhWFIGCF2w2',
-        target: localhost,
+        target: `${localhost}/webhook`,
         logger: console,
     });
     smee.start();

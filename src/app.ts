@@ -8,6 +8,7 @@ import bot from './bot';
 import config from '../config';
 import express from 'express';
 import helmet from 'helmet';
+import path from 'path';
 import redis from 'redis';
 import session from 'express-session';
 import connectRedis from 'connect-redis';
@@ -18,6 +19,8 @@ const redisStore = connectRedis(session);
 
 // express configurations
 const app = express();
+app.set('view engine', 'pug');
+app.set('views', path.join(__dirname + '/../views'));
 app.use(helmet());
 app.use(
     session({
