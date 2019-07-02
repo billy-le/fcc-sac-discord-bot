@@ -7,7 +7,7 @@ const GENERAL_CHANNEL_ID = config.discord.channels.general;
 
 const router = express.Router();
 
-router.post('/webhook', (req, res) => {
+router.post('/', (req, res) => {
     const channel = bot.channels.get(GENERAL_CHANNEL_ID);
     switch (req.headers['x-github-event']) {
         case 'issue_comment':
@@ -17,9 +17,7 @@ router.post('/webhook', (req, res) => {
             const { action } = req.body;
             if (action === 'opened') {
                 const regex = RegExp(/(!cr)\b/gi);
-                const isRequestingCodeReview = regex.test(
-                    req.body.pull_request.title
-                );
+                const isRequestingCodeReview = regex.test(req.body.pull_request.title);
                 if (!isRequestingCodeReview) {
                     return;
                 }

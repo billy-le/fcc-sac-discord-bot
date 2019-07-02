@@ -1,8 +1,8 @@
 import express from 'express';
-import routes from './meetup';
+import meetupRoutes from './meetup';
 
 const router = express.Router();
 
-router.use('/', routes);
+router.use('/meetup', meetupRoutes);
 
 export default router;
